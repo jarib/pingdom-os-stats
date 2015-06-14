@@ -8,13 +8,27 @@ var app = express();
 var builder = new xml2js.Builder();
 var cpuCount = os.cpus().length;
 
-function xmlFor(status, responseTime) {
-    return builder.buildObject({
-        pingdom_http_custom_check: {
-            status: status,
-            response_time: responseTime.toFixed(3)
-        }
-    }) + '\n';
+var thresholds = {
+    load: cpuCount,
+    memory: 60,
+    disk: 50
+};
+
+if (fs.existsSync('./thresholds.json')) {
+    thresholds = require('./thresholds.json');
+}
+
+function xmlFor(status, responseTime, value) {
+    var check = {
+        status: status,
+        response_time: responseTime.toFixed(3),
+    };
+
+    if (value) {
+        check.value = value;
+    }
+
+    return builder.buildObject({pingdom_http_custom_check: check}) + '\n';
 }
 
 function meminfo(cb) {
@@ -50,11 +64,11 @@ if (process.env.DEBUG) {
 app.get('/pingdom/load', function (req, res) {
     var load = os.loadavg();
     var load5min = load[1];
-    var status = load5min >= cpuCount ? 'LOAD' : 'OK';
+    var status = load5min >= thresholds.load ? 'LOAD' : 'OK';
 
     log({load: {values: load, status: status}});
 
-    res.send(xmlFor(status, load5min * 1000));
+    res.send(xmlFor(status, load5min * 1000, load.toString()));
 });
 
 app.get('/pingdom/memory', function (req, res) {
@@ -62,11 +76,12 @@ app.get('/pingdom/memory', function (req, res) {
         var total = info.MemTotal;
         var used = info.MemFree + info.Buffers + info.Cached;
         var pct = (used / total)*100;
-        var status = pct > 60 ? 'MEMORY' : 'OK';
+        var status = pct > thresholds.memory ? 'MEMORY' : 'OK';
+       var msg = "used " + Math.round(used / 1024) + " MB of total " + Math.round(total / 1024) + " MB";
 
         log({memory: {total: total, used: used, pct: pct, status: status}});
 
-        res.send(xmlFor(status, pct));
+        res.send(xmlFor(status, pct, msg));
     });
 });
 
@@ -83,7 +98,7 @@ app.get('/pingdom/disk', function (req, res) {
             var avail = +parts[1];
             var pct = (used / avail)*100;
 
-            var status = pct > 50 ? 'DISK_USAGE' : 'OK';
+            var status = pct > thresholds.disk ? 'DISK_USAGE' : 'OK';
 
             log({disk: {used: used, avail: avail, pct: pct}});
 
