@@ -45,7 +45,7 @@ app.get('/pingdom/load', function (req, res) {
 
     console.log({load: {values: load, status: status}});
 
-    res.send(xmlFor(status, load5min));
+    res.send(xmlFor(status, load5min * 1000));
 });
 
 app.get('/pingdom/memory', function (req, res) {
