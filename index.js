@@ -10,32 +10,32 @@ var cpuCount = os.cpus().length;
 
 function xmlFor(status, responseTime) {
     return builder.buildObject({
-	pingdom_http_custom_check: {
-	    status: status,
-	    response_time: responseTime.toFixed(3)
-	}
+        pingdom_http_custom_check: {
+            status: status,
+            response_time: responseTime.toFixed(3)
+        }
     }) + '\n';
 }
 
 function meminfo(cb) {
-    fs.readFile('/proc/meminfo', {encoding: 'ascii'}, function (err, data) {
-	if (err) { 
-	    cb(err);
-	    return;
-	}
-	
-	var info = {};
+  fs.readFile('/proc/meminfo', {encoding: 'ascii'}, function (err, data) {
+    if (err) {
+        cb(err);
+        return;
+    }
 
-	data.trim().split("\n").forEach(function(line) {
-	    var parts = line.split(':');
-	    var key = parts[0];
-	    var value = parts[1].trim().split(' ')[0];
+    var info = {};
 
-	    info[key] = +value;
-	});
+    data.trim().split("\n").forEach(function(line) {
+        var parts = line.split(':');
+        var key = parts[0];
+        var value = parts[1].trim().split(' ')[0];
 
-	cb(null, info);
+        info[key] = +value;
     });
+
+    cb(null, info);
+  });
 }
 
 app.get('/pingdom/load', function (req, res) {
@@ -63,27 +63,27 @@ app.get('/pingdom/memory', function (req, res) {
 
 app.get('/pingdom/disk', function (req, res) {
     childprocess.exec("df -k /", function(err, stdout, stderr) {
-	if (err) {
-	    res.send(xmlFor('DISK_ERROR', 0));
-	} else {
-	    var lines = stdout.trim().split("\n");
-	    var info = lines[lines.length - 1].replace(/[\s\n\r]+/g, ' ');
-	    var parts = info.split(' ');
+        if (err) {
+            res.send(xmlFor('DISK_ERROR', 0));
+        } else {
+            var lines = stdout.trim().split("\n");
+            var info = lines[lines.length - 1].replace(/[\s\n\r]+/g, ' ');
+            var parts = info.split(' ');
 
-	    var used = +parts[2];
-	    var avail = +parts[3];
-	    var pct = (used / avail)*100;
+            var used = +parts[2];
+            var avail = +parts[3];
+            var pct = (used / avail)*100;
 
-	    var status = pct > 50 ? 'DISK_USAGE' : 'OK';
+            var status = pct > 50 ? 'DISK_USAGE' : 'OK';
 
-	    console.log({disk: {used: used, avail: avail, pct: pct}});
-	    
-	    res.send(xmlFor(status, pct));
-	}
+            console.log({disk: {used: used, avail: avail, pct: pct}});
+
+            res.send(xmlFor(status, pct));
+        }
     });
 });
 
-var server = app.listen(3000, function () {
+var server = app.listen(+(process.env.HTTP_PORT || 3000), function () {
 
     var host = server.address().address;
     var port = server.address().port;
