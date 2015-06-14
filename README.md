@@ -2,8 +2,6 @@
 
 For a really basic monitoring solution, create Pingdom Custom HTTP checks pointed at:
 
-```/pingdom/memory```
-
-```/pingdom/load```
-
-```/pingdom/disk```
+    /pingdom/memory
+    /pingdom/load
+    /pingdom/disk
