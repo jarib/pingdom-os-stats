@@ -74,10 +74,12 @@ app.get('/pingdom/load', function (req, res) {
 app.get('/pingdom/memory', function (req, res) {
     meminfo(function (err, info) {
         var total = info.MemTotal;
-        var used = info.MemFree + info.Buffers + info.Cached;
+        // var used = (info.MemFree + info.Buffers + info.Cached);
+       var used = ((info.MemTotal - info.MemFree) - (info.Buffers + info.Cached))
+
         var pct = (used / total)*100;
         var status = pct > thresholds.memory ? 'MEMORY' : 'OK';
-       var msg = "used " + Math.round(used / 1024) + " MB of total " + Math.round(total / 1024) + " MB";
+        var msg = "used " + Math.round(used / 1024) + " MB of total " + Math.round(total / 1024) + " MB";
 
         log({memory: {total: total, used: used, pct: pct, status: status}});
 
