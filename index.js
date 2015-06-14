@@ -38,12 +38,21 @@ function meminfo(cb) {
   });
 }
 
+var log = function() {};
+
+if (process.env.DEBUG) {
+    log = function(obj) {
+        console.log(JSON.stringify(obj));
+    };
+}
+
+
 app.get('/pingdom/load', function (req, res) {
     var load = os.loadavg();
     var load5min = load[1];
     var status = load5min >= cpuCount ? 'LOAD' : 'OK';
 
-    console.log({load: {values: load, status: status}});
+    log({load: {values: load, status: status}});
 
     res.send(xmlFor(status, load5min * 1000));
 });
@@ -55,7 +64,7 @@ app.get('/pingdom/memory', function (req, res) {
         var pct = (used / total)*100;
         var status = pct > 60 ? 'MEMORY' : 'OK';
 
-        console.log({memory: {total: total, used: used, pct: pct, status: status}});
+        log({memory: {total: total, used: used, pct: pct, status: status}});
 
         res.send(xmlFor(status, pct));
     });
@@ -71,12 +80,12 @@ app.get('/pingdom/disk', function (req, res) {
             var parts = info.split(' ');
 
             var used = +parts[2];
-            var avail = +parts[3];
+            var avail = +parts[1];
             var pct = (used / avail)*100;
 
             var status = pct > 50 ? 'DISK_USAGE' : 'OK';
 
-            console.log({disk: {used: used, avail: avail, pct: pct}});
+            log({disk: {used: used, avail: avail, pct: pct}});
 
             res.send(xmlFor(status, pct));
         }
