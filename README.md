@@ -12,8 +12,8 @@ Place a thresholds.json in the root to configure thresholds:
 
 ```json
 {
-  load: 2,
-  memory: 60,
-  disk: 50
+  "load": 2,
+  "memory": 60,
+  "disk": 50
 }
 ```
